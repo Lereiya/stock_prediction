@@ -63,33 +63,18 @@ def train_model(df):
 # --- SIDEBAR ---
 st.sidebar.header("⚙️ Configuration")
 
-# Dictionary mapping Tickers to Full Names
 STOCK_DICT = {
-    "AAPL": "Apple Inc.",
-    "MSFT": "Microsoft Corp.",
-    "GOOGL": "Alphabet Inc.",
-    "AMZN": "Amazon.com Inc.",
-    "NVDA": "NVIDIA Corp.",
-    "META": "Meta Platforms",
-    "TSLA": "Tesla Inc.",
-    "JPM": "JPMorgan Chase",
-    "V": "Visa Inc.",
-    "UNH": "UnitedHealth Group",
-    "XOM": "Exxon Mobil",
-    "JNJ": "Johnson & Johnson",
-    "WMT": "Walmart Inc.",
-    "MA": "Mastercard Inc.",
-    "PG": "Procter & Gamble",
-    "HD": "Home Depot"
+    "AAPL": "Apple Inc.", "MSFT": "Microsoft Corp.", "GOOGL": "Alphabet Inc.",
+    "AMZN": "Amazon.com Inc.", "NVDA": "NVIDIA Corp.", "META": "Meta Platforms",
+    "TSLA": "Tesla Inc.", "JPM": "JPMorgan Chase", "V": "Visa Inc.",
+    "UNH": "UnitedHealth Group", "XOM": "Exxon Mobil", "JNJ": "Johnson & Johnson",
+    "WMT": "Walmart Inc.", "MA": "Mastercard Inc.", "PG": "Procter & Gamble", "HD": "Home Depot"
 }
 
-# Create the formatted options: "AAPL - Apple Inc."
 formatted_options = [f"{ticker} - {name}" for ticker, name in STOCK_DICT.items()]
 selected_option = st.sidebar.selectbox("Select a Stock Ticker", formatted_options)
-
-# Extract just the ticker symbol for the model/API
 selected_ticker = selected_option.split(" - ")[0]
-TICKERS = list(STOCK_DICT.keys()) # For the screener
+TICKERS = list(STOCK_DICT.keys())
 
 st.sidebar.markdown("### 💰 Backtest Settings")
 cost_bps = st.sidebar.slider("Transaction Cost (bps)", 0, 20, 5)
@@ -103,9 +88,18 @@ if stock_data.empty:
 
 model, scaler, FEATURES = train_model(stock_data)
 test_data = stock_data[stock_data["date"] > "2019-12-31"].copy()
+bt_data = run_backtest(test_data, model.predict(scaler.transform(test_data[FEATURES].values)), cost_bps, min_confidence)
+metrics = compute_metrics(bt_data)
 
-# --- MAIN UI TABS ---
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "🎲 Random Luck Test", "📉 Break-Even Cost", "🔍 Multi-Stock Screener"])
+hit_rate, num_trades = metrics["win_rate"], metrics["num_trades"]
+p_val = binomial_test(int(hit_rate * num_trades), num_trades)
+verdict_title, verdict_desc = generate_verdict(hit_rate, p_val, num_trades, metrics["ann_strat"], metrics["ann_mkt"])
+
+# --- MAIN UI TABS (6 TABS) ---
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📊 Dashboard", "🎲 Random Luck Test", "📉 Break-Even Cost", 
+    "🔍 Multi-Stock Screener", "📄 Honesty Report", "ℹ️ How It Works"
+])
 
 # ==========================================
 # TAB 1: DASHBOARD
@@ -137,13 +131,6 @@ with tab1:
 
     st.markdown("---")
     st.subheader("💰 Honest Backtest (2020-Present)")
-    
-    bt_data = run_backtest(test_data, model.predict(scaler.transform(test_data[FEATURES].values)), cost_bps, min_confidence)
-    metrics = compute_metrics(bt_data)
-    
-    hit_rate, num_trades = metrics["win_rate"], metrics["num_trades"]
-    p_val = binomial_test(int(hit_rate * num_trades), num_trades)
-    verdict_title, verdict_desc = generate_verdict(hit_rate, p_val, num_trades, metrics["ann_strat"], metrics["ann_mkt"])
     
     if "Real" in verdict_title: st.success(f"### {verdict_title}\n{verdict_desc}")
     elif "Inconclusive" in verdict_title: st.warning(f"### {verdict_title}\n{verdict_desc}")
@@ -264,5 +251,88 @@ with tab4:
             
         df_results = pd.DataFrame(results)
         st.dataframe(df_results, use_container_width=True, hide_index=True)
+        st.info("**Note on Multiple Testing:** When screening 10+ stocks, 1 or 2 will likely look 'profitable' by pure chance. Always apply a Bonferroni correction.")
+
+# ==========================================
+# TAB 5: HONESTY REPORT
+# ==========================================
+with tab5:
+    st.subheader("📄 System Honesty Report")
+    st.markdown("This report summarizes the statistical reality of the model's performance on the selected ticker.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### 📊 Performance Snapshot")
+        st.write(f"**Ticker:** {selected_ticker}")
+        st.write(f"**Model:** Ridge Regression (alpha=10.0)")
+        st.write(f"**Train Window:** 2010-2019")
+        st.write(f"**Test Window:** 2020-Present")
+        st.write(f"**Transaction Costs:** {cost_bps} bps")
         
-        st.info("**Note on Multiple Testing:** When screening 10+ stocks, 1 or 2 will likely look 'profitable' by pure chance. Always apply a Bonferroni correction (divide your p-value threshold by the number of stocks tested).")
+    with col2:
+        st.markdown("#### ⚖️ Statistical Verdict")
+        st.write(f"**Hit Rate:** {hit_rate*100:.1f}%")
+        st.write(f"**P-Value:** {p_val:.4f}")
+        st.write(f"**Total Trades:** {num_trades}")
+        if "Real" in verdict_title: st.success(verdict_title)
+        elif "Inconclusive" in verdict_title: st.warning(verdict_title)
+        else: st.error(verdict_title)
+        
+    st.markdown("---")
+    st.markdown("#### 📝 Plain English Summary")
+    
+    if "Real" in verdict_title:
+        summary = f"The model demonstrated a statistically significant edge on {selected_ticker}. With a p-value of {p_val:.3f} and {num_trades} trades, the probability of this result being pure luck is less than 5%. However, this result is still subject to regime shifts and survivorship bias."
+    elif "Inconclusive" in verdict_title:
+        summary = f"The model showed a slight positive tendency on {selected_ticker}, but the result is statistically inconclusive (p-value = {p_val:.3f}). It is highly likely that the observed performance could be replicated by random chance. We do not recommend trading on this signal without further validation."
+    else:
+        summary = f"The model failed to demonstrate any statistical edge on {selected_ticker}. With a p-value of {p_val:.3f} and only {num_trades} trades, the strategy's performance is indistinguishable from random noise. Any profits generated are likely due to luck rather than predictive skill."
+        
+    st.info(summary)
+    
+    st.markdown("---")
+    st.markdown("#### ⚠️ Limitations & Risks")
+    st.markdown("""
+    - **Survivorship Bias:** The universe consists of current S&P 500 constituents, ignoring companies that went bankrupt.
+    - **Slippage:** The backtest assumes a static transaction cost (bps) and does not account for market impact or bid-ask spread widening.
+    - **Regime Shifts:** The model is trained on a specific historical window and may not generalize to future macroeconomic regimes.
+    - **Not Financial Advice:** This tool is for educational purposes only.
+    """)
+    
+    report_text = f"MARKET FORECAST TERMINAL - HONESTY REPORT\n\nTicker: {selected_ticker}\nModel: Ridge Regression\nHit Rate: {hit_rate*100:.2f}%\nP-Value: {p_val:.4f}\nVerdict: {verdict_title}\n\nSummary:\n{summary}\n\nLimitations:\nSurvivorship bias, transaction costs, and regime shifts apply."
+    
+    st.download_button(
+        label="📥 Download Honesty Report (.txt)",
+        data=report_text,
+        file_name=f"honesty_report_{selected_ticker}.txt",
+        mime="text/plain"
+    )
+
+# ==========================================
+# TAB 6: HOW IT WORKS
+# ==========================================
+with tab6:
+    st.subheader("ℹ️ How the Terminal Works")
+    st.markdown("""
+    This terminal is designed to be a **leakage-proof, honesty-first** quantitative research tool. 
+    
+    #### 1. Data Pipeline
+    The app fetches live daily OHLCV data from Yahoo Finance from 2010 to the present day. It then engineers 12 features:
+    - **Momentum (Lag Returns):** 1, 2, 5, 10, and 20-day returns.
+    - **Volatility:** 5, 10, and 20-day rolling standard deviations.
+    - **Technical Indicators:** RSI (14-day), MACD, Bollinger Band Position, and Volume Ratio.
+    
+    #### 2. Chronological Splitting (No Look-Ahead Bias)
+    Standard k-fold cross-validation is invalid for time series. The model is trained **only** on data from 2010 to 2019. It is tested out-of-sample on data from 2020 to the present day. 
+    
+    #### 3. The Model
+    We use a **Ridge Regression** (L2 regularization) model. Because financial features are highly correlated, Ridge prevents overfitting by penalizing large coefficients, intentionally introducing a small amount of bias to drastically reduce variance.
+    
+    #### 4. Honest Backtesting
+    Instead of assuming we can trade at the exact closing price, the backtester charges a transaction cost (in basis points) whenever the signal changes. It also features an **"Abstain" mode**, where the model refuses to trade if the predicted return is too small to overcome costs.
+    
+    #### 5. Statistical Rigor
+    - **Wilson Confidence Intervals:** Accounts for small sample sizes.
+    - **Binomial Testing:** Tests if the win rate is significantly different from 50%.
+    - **Monte Carlo Simulation:** Proves whether the model beat 1,000 random strategies.
+    """)
