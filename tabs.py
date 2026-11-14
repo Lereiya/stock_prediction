@@ -9,7 +9,7 @@ from backtest import run_backtest, compute_metrics
 from ui_components import plot_price_chart, plot_equity_drawdown, plot_feature_importance
 
 def render_dashboard_tab(stock_data, model, scaler, FEATURES, bt_data, metrics, verdict_title, verdict_desc, hit_rate, num_trades, cost_bps, min_confidence):
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([3, 1])
     with col1:
         st.plotly_chart(plot_price_chart(stock_data), use_container_width=True)
     
