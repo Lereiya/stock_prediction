@@ -1,6 +1,10 @@
+"""
+Backtest Engine: Simulates trading based on model predictions, 
+charging transaction costs and calculating performance metrics.
+"""
+
 import pandas as pd
 import numpy as np
-
 def run_backtest(df: pd.DataFrame, predictions: np.ndarray, cost_bps: float, min_confidence: float):
     df = df.copy()
     df["prediction"] = predictions
