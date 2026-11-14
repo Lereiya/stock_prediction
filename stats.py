@@ -12,7 +12,7 @@ def wilson_ci(successes: int, trials: int, confidence: float = 0.95) -> tuple[fl
     return max(0.0, center - margin), min(1.0, center + margin)
 
 def binomial_test(successes: int, trials: int) -> float:
-    if trials == 0: return 1.0
+    if trials <= 0: return 1.0
     res = stats.binomtest(successes, trials, p=0.5, alternative='two-sided')
     return res.pvalue
 
