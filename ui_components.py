@@ -29,7 +29,7 @@ def plot_feature_importance(model, features, ticker):
         marker_color=['red' if w < 0 else 'green' for w in importance_df["Weight"]]
     ))
     fig.update_layout(
-        title=f"Ridge Regression Feature Weights ({ticker})",
+        title=f"Feature Weights: What Drives {ticker} Predictions?",
         xaxis_title="Weight (Positive pushes price UP, Negative pushes DOWN)",
         yaxis_title="Technical Indicator",
         template="plotly_dark",
