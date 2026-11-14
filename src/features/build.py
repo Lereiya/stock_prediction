@@ -20,6 +20,7 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
         out[f"vol_{window}"] = out["log_return"].rolling(window).std()
 
     # RSI (14-day)
+        # Calculate 14-day Relative Strength Index (RSI)
     delta = close.diff()
     gain = delta.clip(lower=0).rolling(14).mean()
     loss = (-delta.clip(upper=0)).rolling(14).mean()
