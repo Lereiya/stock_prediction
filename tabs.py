@@ -48,7 +48,7 @@ def render_dashboard_tab(stock_data, model, scaler, FEATURES, bt_data, metrics, 
 
 def render_luck_test_tab(bt_data, cost_bps):
     st.subheader("🎲 Monte Carlo Random Luck Test")
-    st.markdown("Is the model actually finding a signal, or did it just get lucky? We simulate 1,000 random trading strategies with the exact same number of trades and costs. If the model is just luck, it will fall in the middle of this bell curve.")
+        st.markdown("This simulation generates 1,000 random trading strategies to test if the model's returns are statistically distinguishable from random noise.")
     
     if st.button("Run 1,000 Random Simulations"):
         with st.spinner("Simulating random strategies..."):
