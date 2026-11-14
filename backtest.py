@@ -5,7 +5,7 @@ charging transaction costs and calculating performance metrics.
 
 import pandas as pd
 import numpy as np
-def run_backtest(df: pd.DataFrame, predictions: np.ndarray, cost_bps: float, min_confidence: float):
+def run_backtest(df: pd.DataFrame, predictions: np.ndarray, cost_bps: float, min_confidence: float) -> pd.DataFrame:
     df = df.copy()
     df["prediction"] = predictions
     
