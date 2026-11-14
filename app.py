@@ -13,7 +13,7 @@ from tabs import (
 )
 
 st.set_page_config(page_title="Market Forecast Terminal", page_icon="📈", layout="wide")
-st.title("📈 Market Forecast Terminal")
+st.title("📈 Market Forecast Terminal | Quant Research")
 st.markdown("*Educational use only. Not investment advice.*")
 
 # --- DATA PIPELINE ---
