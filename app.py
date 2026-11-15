@@ -8,8 +8,11 @@ from sklearn.preprocessing import StandardScaler
 from stats import binomial_test, generate_verdict
 from backtest import run_backtest, compute_metrics
 from tabs import (
-    render_dashboard_tab, render_luck_test_tab, 
-    render_breakeven_tab, render_honesty_report_tab
+    render_dashboard_tab, 
+    render_luck_test_tab, 
+    render_breakeven_tab, 
+    render_model_comparison_tab,
+    render_honesty_report_tab
 )
 
 st.set_page_config(page_title="Market Forecast Terminal", page_icon="📈", layout="wide")
@@ -86,8 +89,15 @@ hit_rate, num_trades = metrics["win_rate"], metrics["num_trades"]
 p_val = binomial_test(int(hit_rate * num_trades), num_trades)
 verdict_title, verdict_desc = generate_verdict(hit_rate, p_val, num_trades, metrics["ann_strat"], metrics["ann_mkt"])
 
-# --- UI ---
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Dashboard", "🎲 Random Luck Test", "📉 Break-Even Cost", "🔍 Screener", "📄 Honesty Report", "ℹ️ How It Works"])
+# --- UI TABS ---
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "📊 Dashboard", 
+    "🎲 Random Luck Test", 
+    "📉 Break-Even Cost", 
+    "🤖 Model Comparison", 
+    "📄 Honesty Report", 
+    "ℹ️ How It Works"
+])
 
 with tab1:
     render_dashboard_tab(stock_data, model, scaler, FEATURES, bt_data, metrics, verdict_title, verdict_desc, hit_rate, num_trades, cost_bps, min_confidence)
@@ -96,8 +106,17 @@ with tab2:
 with tab3:
     render_breakeven_tab(test_data, model, scaler, FEATURES, min_confidence, cost_bps)
 with tab4:
-    st.info("To use the screener, run the code from your original app.py")
+    render_model_comparison_tab()
 with tab5:
     render_honesty_report_tab(selected_ticker, cost_bps, hit_rate, p_val, num_trades, verdict_title, model, FEATURES)
 with tab6:
-    st.markdown("### How it works\nThis app uses Ridge Regression trained on 2010-2019 data. See the report for details.")
+    st.markdown("""
+    ### How it works
+    This app uses Ridge Regression trained on 2010-2019 data. 
+    See the Honesty Report tab for details on the statistical verdict.
+    
+    **Data:** Live daily OHLCV from Yahoo Finance.
+    **Features:** 12 technical indicators (Momentum, Volatility, RSI, MACD, Bollinger Bands, Volume).
+    **Model:** Ridge Regression (alpha=10.0).
+    **Costs:** The backtester charges a user-configurable transaction cost on every trade.
+    """)

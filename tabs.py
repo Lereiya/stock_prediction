@@ -6,7 +6,7 @@ from sklearn.metrics import r2_score
 
 from stats import wilson_ci, binomial_test, generate_verdict
 from backtest import run_backtest, compute_metrics
-from ui_components import plot_price_chart, plot_equity_drawdown, plot_feature_importance
+from ui_components import plot_price_chart, plot_equity_drawdown, plot_feature_importance, plot_model_comparison
 
 def render_dashboard_tab(stock_data, model, scaler, FEATURES, bt_data, metrics, verdict_title, verdict_desc, hit_rate, num_trades, cost_bps, min_confidence):
     col1, col2 = st.columns([3, 1])
@@ -101,6 +101,27 @@ def render_breakeven_tab(test_data, model, scaler, FEATURES, min_confidence, cos
         st.success(f"**Break-Even Cost:** The strategy becomes unprofitable at **{break_even} bps**.")
     else:
         st.error("**Break-Even Cost:** The strategy is already unprofitable at 0 bps, or remains profitable up to 50 bps.")
+
+def render_model_comparison_tab():
+    st.subheader("🤖 Algorithm Comparison")
+    st.markdown("We trained four fundamentally different algorithms on the exact same data (2010-2019) and tested them on the out-of-sample data (2020-Present).")
+    
+    # We use the hardcoded results from your Jupyter Notebook to keep the app fast
+    df_results = pd.DataFrame({
+        "Model": ["Zero Predictor", "Ridge Regression", "Neural Network", "Random Forest", "XGBoost"],
+        "R² Score": [-0.00404, -0.00404, -0.00017, -0.00191, -0.00528],
+        "Hit Rate": [0.5000, 0.5058, 0.4848, 0.5135, 0.5141],
+        "Train Time": ["Instant", "Instant", "~10s", "26.61s", "0.74s"]
+    })
+    
+    plot_model_comparison(df_results)
+    
+    st.markdown("""
+    **Key Takeaways:**
+    *   **XGBoost** achieved the highest hit rate (51.41%) and trained in just 0.74 seconds.
+    *   **The Neural Network** actually performed *worse* than random guessing (48.48%), proving it overfit the noise.
+    *   **Ridge Regression** (which we use for live predictions) achieved a 50.58% hit rate and is mathematically interpretable.
+    """)
 
 def render_honesty_report_tab(selected_ticker, cost_bps, hit_rate, p_val, num_trades, verdict_title, model, FEATURES):
     st.subheader("📄 System Honesty Report")

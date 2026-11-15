@@ -1,6 +1,7 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
+import streamlit as st
 
 def plot_price_chart(stock_data):
     fig = go.Figure()
@@ -37,3 +38,17 @@ def plot_feature_importance(model, features, ticker):
         margin=dict(l=0, r=0, t=40, b=0)
     )
     return fig
+
+def plot_model_comparison(results_df):
+    st.markdown("### Final Model Comparison")
+    
+    # Display the dataframe as a beautiful table
+    st.dataframe(results_df, use_container_width=True, hide_index=True)
+    
+    # Add a bar chart for Hit Rate comparison
+    fig = go.Figure(data=[
+        go.Bar(name='Hit Rate', x=results_df['Model'], y=results_df['Hit Rate'], marker_color='steelblue')
+    ])
+    fig.update_layout(title="Directional Hit Rate by Model", yaxis_title="Hit Rate", template="plotly_dark", height=400)
+    fig.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="Random Guessing (50%)")
+    st.plotly_chart(fig, use_container_width=True)
