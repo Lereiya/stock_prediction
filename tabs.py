@@ -47,8 +47,8 @@ def render_dashboard_tab(stock_data, model, scaler, FEATURES, bt_data, metrics, 
     st.plotly_chart(plot_equity_drawdown(bt_data, cost_bps), use_container_width=True)
 
 def render_luck_test_tab(bt_data, cost_bps):
-        st.subheader("🎲 Monte Carlo Random Luck Test")
-        st.markdown("This simulation generates 1,000 random trading strategies to test if the model's returns are statistically distinguishable from random noise.")
+    st.subheader("🎲 Monte Carlo Random Luck Test")
+    st.markdown("This simulation generates 1,000 random trading strategies to test if the model's returns are statistically distinguishable from random noise.")
     
     if st.button("Run 1,000 Random Simulations"):
         with st.spinner("Simulating random strategies..."):
